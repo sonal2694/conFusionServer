@@ -1,6 +1,6 @@
 var express = require('express');
 const bodyParser = require('body-parser');
-var User = require('../models/users');
+var User = require('../models/user');
 var session = require('express-session');
 var FileStore = require('session-file-store')(session);
 var passport = require('passport');
@@ -23,11 +23,23 @@ router.post('/signup', (req, res, next) => {
       res.json({err: err});
     }
     else {
-      passport.authenticate('local')(req, res, () => {
-        res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
-        res.json({success: true, status: 'Registration Successful!'});
-      });
+      if (req.body.firstname)
+        user.firstname = req.body.firstname;
+      if (req.body.lastname)
+        user.lastname = req.body.lastname;
+      user.save((err, user) => {
+        if (err) {
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.json({err: err});
+          return;
+        }
+        passport.authenticate('local')(req, res, () => {
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/json');
+          res.json({success: true, status: 'Registration Successful!'});
+        });
+      });  
     }
   });
 });
@@ -42,7 +54,7 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
 });
 
 //For user to logout
-router.get('/logout', (req, res) => {
+router.get('/logout', (req, res, next) => {
   if(req.session) { //if user is logged in
     req.session.destroy(); // removes the info from server side
     res.clearCookie('session-id'); //asks the client to delete the cookie from client-side

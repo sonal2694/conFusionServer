@@ -6,11 +6,13 @@ const authenticate = require('../authenticate');
 const Dishes = require('../models/dishes');
 
 const dishRouter = express.Router();
+
 dishRouter.use(bodyParser.json());
 
 dishRouter.route('/')
 .get((req, res, next) => {
   Dishes.find({})
+  .populate('comments.author')
   .then((dishes) => {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
@@ -47,6 +49,7 @@ dishRouter.route('/')
 dishRouter.route('/:dishId')
 .get((req, res, next) => {
   Dishes.findById(req.params.dishId)
+  .populate('comments.author')
   .then((dish) => {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
@@ -83,6 +86,7 @@ dishRouter.route('/:dishId')
 dishRouter.route('/:dishId/comments')
 .get((req, res, next) => {
   Dishes.findById(req.params.dishId)
+  .populate('comments.author')
   .then((dish) => {
     //if the particular dish exists
     if(dish != null) {
@@ -102,6 +106,7 @@ dishRouter.route('/:dishId/comments')
   Dishes.findById(req.params.dishId)
   .then((dish) => {
     if(dish != null) {
+      req.body.author = req.user._id;
       dish.comments.push(req.body); // add the comments to the comment array of the dish
       //save the dish and return success message in response
       dish.save()
@@ -152,6 +157,7 @@ dishRouter.route('/:dishId/comments')
 dishRouter.route('/:dishId/comments/:commentId')
 .get((req, res, next) => {
   Dishes.findById(req.params.dishId)
+  .populate('comments.author')
   .then((dish) => {
     //check if the dish exists and the particular comment
     if(dish != null && dish.comments.id(req.params.commentId) != null) {

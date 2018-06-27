@@ -1,6 +1,6 @@
 var passport = require('passport');
 var LocalStrategy = require('passport-local');
-var User = require('./models/users');
+var User = require('./models/user');
 var JwtStrategy = require('passport-jwt').Strategy;
 var ExtractJwt = require('passport-jwt').ExtractJwt;
 var jwt = require('jsonwebtoken');
@@ -28,7 +28,7 @@ exports.jwtPassport = passport.use(new JwtStrategy(opts,
                 return done(err, false); //done() is a callback that passport will pass into the strategy
             }
             else if (user) {
-                return done(null, true);
+                return done(null, user);
             }
             else {
                 return done(null, false);
