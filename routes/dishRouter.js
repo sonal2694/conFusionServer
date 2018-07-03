@@ -186,9 +186,11 @@ dishRouter.route('/:dishId/comments/:commentId')
 .put(authenticate.verifyUser, (req, res, next) => {
   Dishes.findById(req.params.dishId)
   .then((dish) => {
+
     //check if the dish exists and the particular comment and Update
     if(dish != null && dish.comments.id(req.params.commentId) != null) {
 
+      //req.user works same as req.user._id
       if((req.user).equals(dish.comments.id(req.params.commentId).author)) {
         //not allowing user to change the author (only in rating & comemnt)
         if ( req.body.rating) {
@@ -227,9 +229,11 @@ dishRouter.route('/:dishId/comments/:commentId')
 .delete(authenticate.verifyUser, (req, res, next) => {
   Dishes.findById(req.params.dishId)
   .then((dish) => {
+
     //Handle both cases: dish not null and commentId not null
     if(dish != null && dish.comments.id(req.params.commentId) != null) {
 
+      //req.user works same as req.user._id
       if((req.user).equals(dish.comments.id(req.params.commentId).author)) {
         dish.comments.id(req.params.commentId).remove();
         dish.save()
