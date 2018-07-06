@@ -5,12 +5,13 @@ var session = require('express-session');
 var FileStore = require('session-file-store')(session);
 var passport = require('passport');
 var authenticate = require('../authenticate');
+var cors = require('./cors');
 
 var router = express.Router();
 router.use(bodyParser.json());
 
 /* GET users listing. */
-router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
+router.get('/', cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
   User.find({})
   .then((users) => {
     res.statusCode = 200;
@@ -21,7 +22,7 @@ router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, function(req,
 });
 
 //For user to Sign Up
-router.post('/signup', (req, res, next) => {
+router.post('/signup', cors.corsWithOptions, (req, res, next) => {
   User.register(new User({username: req.body.username}), req.body.password, (err, user) => {
     if(err) {
       res.statusCode = 500;
@@ -51,7 +52,7 @@ router.post('/signup', (req, res, next) => {
 });
 
 //For user to login. authenticate() takes care of sending errors as well
-router.post('/login', passport.authenticate('local'), (req, res) => {
+router.post('/login', cors.corsWithOptions, passport.authenticate('local'), (req, res) => {
 
   var token = authenticate.getToken({_id: req.user._id});
   res.statusCode = 200;
