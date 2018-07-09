@@ -62,9 +62,33 @@ favoriteRouter.route('/')
 
 
 favoriteRouter.route('/:dishId')
+.options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })
+//GET will check if that dish exists in the favorites list or not
 .get(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
-    res.statusCode = 403;
-    res.end('GET operation not supported on /favorite' + req.params.dishId);
+    Favorites.findOne({user: req.user._id})
+    .then((favorites) => {
+        //if no favorites exist for the user
+        if(!favorites) {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            return res.json({"exists": false, "favorites": favorites});
+        }
+        else {
+            //if favorites exist but that particular dish is not in the list
+            if(favorites.dishes.indexOf(req.params.dishId) < 0) {//if the dish doesnt exist
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                return res.json({"exists": false, "favorites": favorites});
+            }
+            //if the dish is part of the list of favorite dishes of the user
+            else {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                return res.json({"exists": true, "favorites": favorites});
+            }
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
 })
 .post(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
     Favorites.findOne({user: req.user})
@@ -103,25 +127,18 @@ favoriteRouter.route('/:dishId')
         var index = (favorite.dishes).indexOf(req.params.dishId);
         if(index != -1) {
             (favorite.dishes).splice(index , 1);
-            console.log(favorite.dishes.length);
-            //if no favorites left in the list, removing the favorite list document of the user completely
-            if (favorite.dishes.length == 0) {
-                Favorites.findOneAndRemove({user: req.user})
-                .then((resp) => {
-                    res.statusCode = 200;
-                    res.setHeader('Content-Type', 'text/plain');
-                    res.end('Your favorites list is now empty.');
-                }, (err) => next(err))
-                .catch((err) => next(err));
-            }
-            else {
-                favorite.save()
+            favorite.save()
+            .then((favorite) => {
+                Favorites.findById(favorite._id)
+                .populate('user')
+                .populate('dishes') // we want to return the updated list here
                 .then((favorite) => {
                     res.statusCode = 200;
                     res.setHeader('Content-Type', 'application/json');
                     res.json(favorite);
-                }, (err) => next(err));
-            }
+                })
+            })
+            .catch((err) => { return next(err) });
         }
         else {
             res.statusCode = 200;
